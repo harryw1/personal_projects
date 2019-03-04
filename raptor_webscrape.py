@@ -60,9 +60,6 @@ def build_results(url):
 
     return results
 
-    # Raise an exception if we failed to get any data from the url
-    raise Exception('Error retrieving contents at {}'.format(url))
-
 def write_to_file(dictionary):
     write = csv.writer(open("output.csv", "w"))
     for key, val in dictionary.items():
