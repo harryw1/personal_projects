@@ -1,9 +1,11 @@
+import csv
+import re
+from contextlib import closing
+
+from bs4 import BeautifulSoup
 from requests import get
 from requests.exceptions import RequestException
-from contextlib import closing
-from bs4 import BeautifulSoup
-import re
-import csv
+
 
 def simple_get(url):
     """
@@ -23,34 +25,35 @@ def simple_get(url):
         log_error('Error during requests to {0} : {1}'.format(url, str(e)))
         return None
 
+
 def build_results(url):
     """
     Get the names of all the species and their counts
     from a site for a given day
     """
     webpage = url
-    response  = simple_get(webpage)
+    response = simple_get(webpage)
 
     if response is not None:
         html = BeautifulSoup(response, 'html.parser')
-        species_box = html.find('table', attrs={'class' : 'splist'})
+        species_box = html.find('table', attrs={'class': 'splist'})
         species_results = list()
         for t in species_box:
             species_results.append(t.text)
-    
+
     # Can remove the first item because it holds the text
     # "\nDay's Raptor Counts"
     del species_results[0]
 
     # Pull the count from the result set
-    # using regex to find all numbers on a 
+    # using regex to find all numbers on a
     # single line
     raptor_count = list()
     for s in species_results:
         raptor_count.append(re.findall(r'\d+', s))
-    
+
     # Finally, build a new dictionary
-    # containging all of the species 
+    # containging all of the species
     # and the number of migrants from the day
     results = dict()
     count = 0
@@ -60,10 +63,12 @@ def build_results(url):
 
     return results
 
+
 def write_to_file(dictionary):
     write = csv.writer(open("output.csv", "w"))
     for key, val in dictionary.items():
         write.writerow([key, val])
+
 
 def is_good_response(resp):
     """
@@ -75,11 +80,13 @@ def is_good_response(resp):
             and content_type is not None
             and content_type.find('html') > -1)
 
+
 def log_error(e):
     """
     Print errors to the console
     """
     print(e)
+
 
 def choose_webpage():
     webadress = "https://www.hawkcount.org/day_summary.php?rsite=!!!&rmonth=@@&rday=##&ryear=$$$$"
@@ -95,7 +102,7 @@ def choose_webpage():
 
     return webadress
 
+
 user_webpage = choose_webpage()
 result_set = build_results(user_webpage)
 write_to_file(result_set)
-    
