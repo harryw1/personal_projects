@@ -64,8 +64,8 @@ def build_results(url):
     return results
 
 
-def write_to_file(dictionary):
-    write = csv.writer(open("output.csv", "w"))
+def write_to_file(dictionary, site, month, day, year):
+    write = csv.writer(open(f"{site}_{month}_{day}_{year}.csv", "w"))
     for key, val in dictionary.items():
         write.writerow([key, val])
 
@@ -88,13 +88,8 @@ def log_error(e):
     print(e)
 
 
-def choose_webpage():
+def choose_webpage(site, month, day, year):
     webadress = "https://www.hawkcount.org/day_summary.php?rsite=!!!&rmonth=@@&rday=##&ryear=$$$$"
-    site = input('Please enter a site number: ')
-    month = input('Please enter a month: ')
-    day = input('Please enter a day: ')
-    year = input('Please enter a year: ')
-
     webadress = webadress.replace('!!!', site)
     webadress = webadress.replace('@@', month)
     webadress = webadress.replace('##', day)
@@ -102,7 +97,11 @@ def choose_webpage():
 
     return webadress
 
+site = input('Please enter a site number: ')
+month = input('Please enter a month: ')
+day = input('Please enter a day: ')
+year = input('Please enter a year: ')
 
-user_webpage = choose_webpage()
+user_webpage = choose_webpage(site, month, day, year)
 result_set = build_results(user_webpage)
 write_to_file(result_set)
