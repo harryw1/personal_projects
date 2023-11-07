@@ -44,9 +44,9 @@ df['Revenue Month'] = pd.to_datetime(df['Revenue Month'])
 print(df.head())
 
 # Loop through each category to create separate forecasts
-for category in df['Heirarchy Name'].unique():
+for category in df['Hierarchy Name'].unique():
     
-    df_category = df[df['Category'] == category]
+    df_category = df[df['Hierarchy Name'] == category]
 
     # Preprocess the data for Prophet (rename columns to 'ds' and 'y')
     df_prophet = df_category[['Revenue Month', 'Total Cost']].rename(columns={'Revenue Month': 'ds', 'Total Cost': 'y'})
