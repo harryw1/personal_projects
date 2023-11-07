@@ -1,26 +1,47 @@
-from prophet import Prophet
 import pandas as pd
+from prophet import Prophet
+import tkinter as tk
+from tkinter import filedialog
 
-# Assuming 'time_series_data' is your preprocessed DataFrame with the 'Revenue Month' and 'Total Cost'
-# for a given category. You need to rename the columns to 'ds' and 'y' as Prophet expects.
+# Function to prompt for file selection
+def ask_for_file():
+    # Create a root window, but don't display it
+    root = tk.Tk()
+    root.withdraw()  # We don't want a full GUI, so keep the root window from appearing
+    
+    # Show an "Open" dialog box and return the path to the selected file
+    file_path = filedialog.askopenfilename(
+        title="Select the Excel file",
+        filetypes=(("Excel files", "*.xlsx;*.xls"), ("All files", "*.*"))  # Optional: specify file types
+    )
+    
+    return file_path
 
-# Preparing the data
-df_prophet = time_series_data[['Revenue Month', 'Total Cost']].rename(columns={'Revenue Month': 'ds', 'Total Cost': 'y'})
+# Use the function to get the file path
+excel_file_path = ask_for_file()
 
-# Create and fit the Prophet model
-# The daily_seasonality, weekly_seasonality, and yearly_seasonality parameters
-# can be adjusted according to your data's specific seasonality
+# Data Preprocessing
+df = pd.read_excel(excel_file_path)
+
+# Convert 'Revenue Month' to datetime
+df['Revenue Month'] = pd.to_datetime(df['Revenue Month'])
+
+# Select relevant columns and rename them to 'ds' and 'y'
+df_prophet = df[['Revenue Month', 'Total Cost']].rename(columns={'Revenue Month': 'ds', 'Total Cost': 'y'})
+
+# Drop rows with missing values or fill them
+df_prophet = df_prophet.dropna()
+
+# Modeling with Prophet
 model = Prophet(daily_seasonality=False, weekly_seasonality=False, yearly_seasonality=True)
 model.fit(df_prophet)
 
 # Make future predictions
-# Replace 'periods' with the number of periods you want to forecast
 future = model.make_future_dataframe(periods=365, freq='D')
 forecast = model.predict(future)
 
-# Plot the forecast
-fig1 = model.plot(forecast)
-fig2 = model.plot_components(forecast)
+# Save the forecast to an Excel file
+forecast_output_path = filedialog.asksaveasfilename # filedialog.asksaveasfilename to get path from user
+forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_excel(forecast_output_path, index=False)
 
-# Show the plot if you're running this in an interactive environment like Jupyter Notebook
-plt.show()
+print(f"The forecast has been saved to {forecast_output_path}")
