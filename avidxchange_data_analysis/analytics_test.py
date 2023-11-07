@@ -3,19 +3,21 @@ from prophet import Prophet
 import tkinter as tk
 from tkinter import filedialog
 
-# Function to prompt for file selection
+# Function to ask for the file to open
 def ask_for_file():
-    # Create a root window, but don't display it
+    # Set up the GUI to ask for the Excel file
     root = tk.Tk()
-    root.withdraw()  # We don't want a full GUI, so keep the root window from appearing
-    
-    # Show an "Open" dialog box and return the path to the selected file
-    file_path = filedialog.askopenfilename(
-        title="Select the Excel file",
-        # filetypes=(("Excel files", "*.xlsx;*.xls"), ("All files", "*.*"))  # Optional: specify file types
-    )
-    
+    root.withdraw()
+    file_path = filedialog.askopenfilename()
     return file_path
+
+# Function to save the forecast to an Excel file
+def save_forecast(forecast_df, category):
+    file_path = filedialog.asksaveasfilename(defaultextension=".xlsx",
+                                             filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+    if file_path:
+        forecast_df.to_excel(file_path, index=False)
+        print(f"Forecast for {category} saved to {file_path}")
 
 # Use the function to get the file path
 excel_file_path = ask_for_file()
@@ -39,48 +41,28 @@ df.columns = df.columns.str.strip()
 # Convert 'Revenue Month' to datetime
 df['Revenue Month'] = pd.to_datetime(df['Revenue Month'])
 
-# Select relevant columns and rename them to 'ds' and 'y'
-df_prophet = df[['Revenue Month', 'Total Cost']].rename(columns={'Revenue Month': 'ds', 'Total Cost': 'y'})
+print(df.head())
 
-# Drop rows with missing values or fill them
-df_prophet = df_prophet.dropna()
-
-# Modeling with Prophet
-model = Prophet(daily_seasonality=False, weekly_seasonality=False, yearly_seasonality=True)
-model.fit(df_prophet)
-
-# Make future predictions
-future = model.make_future_dataframe(periods=365, freq='D')
-forecast = model.predict(future)
-
-# Save file features
-def ask_save_as_file():
-    # Create a root window, but don't display it
-    root = tk.Tk()
-    root.withdraw()  # We don't want a full GUI, so keep the root window from appearing
-
-    # Show a "Save As" dialog box and return the path to the selected file
-    file_path = filedialog.asksaveasfilename(
-        title="Save the Excel file",
-        filetypes=(("Excel files", "*.xlsx"), ("All files", "*.*"))  # Optional: specify file types
-    )
+# Loop through each category to create separate forecasts
+for category in df['Heirarchy Name'].unique():
     
-    # Destroy the root window after use
-    root.destroy()
+    df_category = df[df['Category'] == category]
 
-    return file_path
+    # Preprocess the data for Prophet (rename columns to 'ds' and 'y')
+    df_prophet = df_category[['Revenue Month', 'Total Cost']].rename(columns={'Revenue Month': 'ds', 'Total Cost': 'y'})
 
-# Use the function to get the file path
-excel_save_path = ask_save_as_file()
+    # Drop rows with missing values or fill them
+    df_prophet = df_prophet.dropna()
 
-# If the user cancels, the function will return '', so check if a path was provided
-if excel_save_path:
-    # Continue with saving the file using the provided path
-    # ... your code to save the file goes here
-    print(f"File will be saved to: {excel_save_path}")
-else:
-    print("File save operation was canceled.")
+    # Initialize and fit the Prophet model
+    model = Prophet()
+    model.fit(df_prophet)
 
-forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].to_excel(excel_save_path, index=False)
+    # Create a DataFrame to hold future dates for the forecast
+    future_dates = model.make_future_dataframe(periods=365, freq='D')
 
-print(f"The forecast has been saved to {excel_save_path}")
+    # Make the forecast
+    forecast = model.predict(future_dates)
+
+    # Save the forecast to an Excel file
+    save_forecast(forecast, category)
